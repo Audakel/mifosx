@@ -5,13 +5,11 @@
  */
 package org.mifosplatform.portfolio.loanaccount.loanschedule.domain;
 
-import org.joda.time.Days;
-import org.joda.time.LocalDate;
-import org.joda.time.Months;
-import org.joda.time.Weeks;
-import org.joda.time.Years;
+import org.joda.time.*;
+import org.mifosplatform.organisation.holiday.domain.Holiday;
 import org.mifosplatform.organisation.holiday.service.HolidayUtil;
 import org.mifosplatform.organisation.workingdays.domain.RepaymentRescheduleType;
+import org.mifosplatform.organisation.workingdays.domain.WorkingDays;
 import org.mifosplatform.organisation.workingdays.service.WorkingDaysUtil;
 import org.mifosplatform.portfolio.calendar.domain.Calendar;
 import org.mifosplatform.portfolio.calendar.domain.CalendarHistory;
@@ -21,6 +19,8 @@ import org.mifosplatform.portfolio.common.domain.DayOfWeekType;
 import org.mifosplatform.portfolio.common.domain.PeriodFrequencyType;
 import org.mifosplatform.portfolio.loanaccount.data.HolidayDetailDTO;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 public class DefaultScheduledDateGenerator implements ScheduledDateGenerator {
@@ -52,6 +52,23 @@ public class DefaultScheduledDateGenerator implements ScheduledDateGenerator {
             dueRepaymentPeriodDate = getRepaymentPeriodDate(loanApplicationTerms.getRepaymentPeriodFrequencyType(),
                     loanApplicationTerms.getRepaymentEvery(), lastRepaymentDate, loanApplicationTerms.getNthDay(),
                     loanApplicationTerms.getWeekDayType());
+            final WorkingDays workingDays = holidayDetailDTO.getWorkingDays();
+            if (workingDays.getExtendTermForRepaymentsOnHolidays()) {
+                boolean repaymentDateIsOnHoliday = false;
+                // compile the list of holidays into Intervals to see if this date lands on a holiday
+                final List<Interval> holidayInterval = new ArrayList<>();
+                for (Holiday holiday : holidayDetailDTO.getHolidays()) {
+                    holidayInterval.add(new Interval(
+                            holiday.getFromDateLocalDate().toDateTimeAtStartOfDay(),
+                            holiday.getToDateLocalDate().toDateTime(LocalTime.parse("23:59:59"))
+                    ));
+                }
+                while (intervalListContainsDate(holidayInterval, dueRepaymentPeriodDate)) {
+                    dueRepaymentPeriodDate = getRepaymentPeriodDate(loanApplicationTerms.getRepaymentPeriodFrequencyType(),
+                            loanApplicationTerms.getRepaymentEvery(), dueRepaymentPeriodDate, loanApplicationTerms.getNthDay(),
+                            loanApplicationTerms.getWeekDayType());
+                }
+            }
             if (currentCalendar != null) {
                 // If we have currentCalendar object, this means there is a
                 // calendar associated with
@@ -66,6 +83,15 @@ public class DefaultScheduledDateGenerator implements ScheduledDateGenerator {
             }
         }
         return dueRepaymentPeriodDate;
+    }
+
+    private boolean intervalListContainsDate(List<Interval> intervalList, LocalDate date) {
+        for (Interval interval : intervalList) {
+            if (interval.contains(date.toDateTime(LocalTime.parse("11:59:59")))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override

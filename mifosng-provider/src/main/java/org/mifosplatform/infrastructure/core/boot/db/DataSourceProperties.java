@@ -32,7 +32,7 @@ public class DataSourceProperties extends PoolProperties {
     @Value("${" + PORT + ":3306}")
     private volatile @NotNull int port;
 
-    @Value("${" + HOST + ":localhost}")
+    @Value("${" + HOST + ":192.168.1.142}")
     private volatile @NotNull String hostname;
 
     @Value("${" + DB + ":mifosplatform-tenants}")
@@ -41,7 +41,7 @@ public class DataSourceProperties extends PoolProperties {
     @Value("${" + UID + ":root}")
     private volatile @NotNull String username;
 
-    @Value("${" + PWD + ":mysql}")
+    @Value("${" + PWD + ":password}")
     private volatile @NotNull String password;
 
     @Value("${" + PROTOCOL + ":jdbc}")
