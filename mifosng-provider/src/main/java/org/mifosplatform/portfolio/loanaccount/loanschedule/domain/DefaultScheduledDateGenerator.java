@@ -45,30 +45,13 @@ public class DefaultScheduledDateGenerator implements ScheduledDateGenerator {
             boolean isFirstRepayment, final HolidayDetailDTO holidayDetailDTO) {
         final LocalDate firstRepaymentPeriodDate = loanApplicationTerms.getCalculatedRepaymentsStartingFromLocalDate();
         LocalDate dueRepaymentPeriodDate = null;
+        Calendar currentCalendar = loanApplicationTerms.getLoanCalendar();
         if (isFirstRepayment && firstRepaymentPeriodDate != null) {
             dueRepaymentPeriodDate = firstRepaymentPeriodDate;
         } else {
-            Calendar currentCalendar = loanApplicationTerms.getLoanCalendar();
             dueRepaymentPeriodDate = getRepaymentPeriodDate(loanApplicationTerms.getRepaymentPeriodFrequencyType(),
                     loanApplicationTerms.getRepaymentEvery(), lastRepaymentDate, loanApplicationTerms.getNthDay(),
                     loanApplicationTerms.getWeekDayType());
-            final WorkingDays workingDays = holidayDetailDTO.getWorkingDays();
-            if (workingDays.getExtendTermForRepaymentsOnHolidays()) {
-                boolean repaymentDateIsOnHoliday = false;
-                // compile the list of holidays into Intervals to see if this date lands on a holiday
-                final List<Interval> holidayInterval = new ArrayList<>();
-                for (Holiday holiday : holidayDetailDTO.getHolidays()) {
-                    holidayInterval.add(new Interval(
-                            holiday.getFromDateLocalDate().toDateTimeAtStartOfDay(),
-                            holiday.getToDateLocalDate().toDateTime(LocalTime.parse("23:59:59"))
-                    ));
-                }
-                while (intervalListContainsDate(holidayInterval, dueRepaymentPeriodDate)) {
-                    dueRepaymentPeriodDate = getRepaymentPeriodDate(loanApplicationTerms.getRepaymentPeriodFrequencyType(),
-                            loanApplicationTerms.getRepaymentEvery(), dueRepaymentPeriodDate, loanApplicationTerms.getNthDay(),
-                            loanApplicationTerms.getWeekDayType());
-                }
-            }
             if (currentCalendar != null) {
                 // If we have currentCalendar object, this means there is a
                 // calendar associated with
@@ -80,6 +63,22 @@ public class DefaultScheduledDateGenerator implements ScheduledDateGenerator {
                         loanApplicationTerms.getRepaymentEvery(),
                         CalendarUtils.getMeetingFrequencyFromPeriodFrequencyType(loanApplicationTerms.getLoanTermPeriodFrequencyType()),
                         holidayDetailDTO.getWorkingDays());
+            }
+        }
+        if (currentCalendar == null && holidayDetailDTO.getWorkingDays().getExtendTermForRepaymentsOnHolidays()) {
+            boolean repaymentDateIsOnHoliday = false;
+            // compile the list of holidays into Intervals to see if this date lands on a holiday
+            final List<Interval> holidayInterval = new ArrayList<>();
+            for (Holiday holiday : holidayDetailDTO.getHolidays()) {
+                holidayInterval.add(new Interval(
+                        holiday.getFromDateLocalDate().toDateTimeAtStartOfDay(),
+                        holiday.getToDateLocalDate().toDateTime(LocalTime.parse("23:59:59"))
+                ));
+            }
+            while (intervalListContainsDate(holidayInterval, dueRepaymentPeriodDate)) {
+                dueRepaymentPeriodDate = getRepaymentPeriodDate(loanApplicationTerms.getRepaymentPeriodFrequencyType(),
+                        loanApplicationTerms.getRepaymentEvery(), dueRepaymentPeriodDate, loanApplicationTerms.getNthDay(),
+                        loanApplicationTerms.getWeekDayType());
             }
         }
         return dueRepaymentPeriodDate;

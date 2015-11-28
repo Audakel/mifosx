@@ -36,6 +36,12 @@ public class ServerApplication {
 	private static class Configuration extends AbstractApplicationConfiguration { }
 
 	public static void main(String[] args) throws Exception {
+		try {
+			java.lang.management.ManagementFactory.getRuntimeMXBean();
+		} catch (Error e) { }
+		try {
+			java.lang.management.ManagementFactory.getPlatformMBeanServer();
+		} catch (Error e) { }
 		ConfigurableApplicationContext ctx = SpringApplication.run(Configuration.class, args);
 		ApplicationExitUtil.waitForKeyPressToCleanlyExit(ctx);
 	}
