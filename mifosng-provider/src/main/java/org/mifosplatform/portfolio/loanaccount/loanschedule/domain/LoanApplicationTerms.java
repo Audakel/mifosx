@@ -27,6 +27,7 @@ import org.mifosplatform.portfolio.common.domain.DaysInYearType;
 import org.mifosplatform.portfolio.common.domain.NthDayType;
 import org.mifosplatform.portfolio.common.domain.PeriodFrequencyType;
 import org.mifosplatform.portfolio.loanaccount.data.DisbursementData;
+import org.mifosplatform.portfolio.loanaccount.data.HolidayDetailDTO;
 import org.mifosplatform.portfolio.loanaccount.data.LoanTermVariationsData;
 import org.mifosplatform.portfolio.loanaccount.domain.LoanInterestRecalculationDetails;
 import org.mifosplatform.portfolio.loanproduct.domain.AmortizationMethod;
@@ -441,7 +442,11 @@ public final class LoanApplicationTerms {
      * 
      */
     public Money calculateTotalInterestCharged(final PaymentPeriodsInOneYearCalculator calculator, final MathContext mc) {
+        return calculateTotalInterestChargedWithHolidays(calculator, 0, mc);
+    }
 
+
+    public Money calculateTotalInterestChargedWithHolidays(PaymentPeriodsInOneYearCalculator calculator, int numberOfHolidaysRescheduled, MathContext mc) {
         Money totalInterestCharged = this.principal.zero();
 
         switch (this.interestMethod) {
@@ -449,17 +454,15 @@ public final class LoanApplicationTerms {
                 final Money totalInterestChargedForLoanTerm = calculateTotalFlatInterestDueWithoutGrace(calculator, mc);
 
                 final Money totalInterestPerInstallment = calculateTotalInterestPerInstallmentWithoutGrace(calculator, mc);
-
                 final Money totalGraceOnInterestCharged = totalInterestPerInstallment.multiplyRetainScale(getInterestChargingGrace(),
                         mc.getRoundingMode());
-
-                totalInterestCharged = totalInterestChargedForLoanTerm.minus(totalGraceOnInterestCharged);
-            break;
+                final Money additionalInterestFromHolidays = totalInterestPerInstallment.multipliedBy(numberOfHolidaysRescheduled);
+                totalInterestCharged = totalInterestChargedForLoanTerm.minus(totalGraceOnInterestCharged).plus(additionalInterestFromHolidays);
+                break;
             case DECLINING_BALANCE:
             case INVALID:
-            break;
+                break;
         }
-
         return totalInterestCharged;
     }
 

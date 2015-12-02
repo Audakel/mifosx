@@ -32,7 +32,7 @@ public class DataSourceProperties extends PoolProperties {
     @Value("${" + PORT + ":3306}")
     private volatile @NotNull int port;
 
-    @Value("${" + HOST + ":192.168.1.142}")
+    @Value("${" + HOST + ":localhost}")
     private volatile @NotNull String hostname;
 
     @Value("${" + DB + ":mifosplatform-tenants}")

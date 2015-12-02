@@ -5,10 +5,13 @@
  */
 package org.mifosplatform.portfolio.loanaccount.loanschedule.domain;
 
+import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
 import org.mifosplatform.portfolio.common.domain.DayOfWeekType;
 import org.mifosplatform.portfolio.common.domain.PeriodFrequencyType;
 import org.mifosplatform.portfolio.loanaccount.data.HolidayDetailDTO;
+
+import java.util.List;
 
 public interface ScheduledDateGenerator {
 
@@ -30,4 +33,6 @@ public interface ScheduledDateGenerator {
 
     LocalDate generateNextScheduleDateStartingFromDisburseDate(LocalDate lastRepaymentDate, LoanApplicationTerms loanApplicationTerms,
             final HolidayDetailDTO holidayDetailDTO);
+
+    List<DateTime> retrieveHolidayRescheduledPaymentDateList(LoanApplicationTerms loanApplicationTerms, HolidayDetailDTO holidayDetailDTO);
 }
