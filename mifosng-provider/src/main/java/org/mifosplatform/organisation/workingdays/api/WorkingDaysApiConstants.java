@@ -24,11 +24,11 @@ public class WorkingDaysApiConstants {
     public static final String localeParamName = "locale";
     public static final String extendTermForDailyRepayments = "extendTermForDailyRepayments";
     public static final String extendTermForRepaymentsOnHolidays = "extendTermForRepaymentsOnHolidays";
-
+    public static final String applyInterestOnHolidays = "applyInterestOnHolidays";
 
 
     public static final Set<String> WORKING_DAYS_CREATE_OR_UPDATE_REQUEST_DATA_PARAMETERS =new HashSet<>(Arrays.asList(
-            recurrence,repayment_rescheduling_enum,localeParamName,extendTermForDailyRepayments,extendTermForRepaymentsOnHolidays
+            recurrence,repayment_rescheduling_enum,localeParamName,extendTermForDailyRepayments,extendTermForRepaymentsOnHolidays,applyInterestOnHolidays
     ));
     public static final Set<String> WORKING_DAYS_RESPONSE_DATA_PARAMETERS = new HashSet<>(Arrays.asList(idParamName,
             recurrence,repayment_rescheduling_enum,extendTermForDailyRepayments,extendTermForRepaymentsOnHolidays

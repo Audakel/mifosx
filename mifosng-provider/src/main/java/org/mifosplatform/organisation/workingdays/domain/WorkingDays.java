@@ -32,6 +32,9 @@ public class WorkingDays extends AbstractPersistable<Long> {
 
     @Column(name = "extend_term_holiday_repayment", nullable = false)
     private Boolean extendTermForRepaymentsOnHolidays;
+
+    @Column(name = "apply_interest_holidays", nullable = false)
+    private Boolean applyInterestOnHolidays;
     
     protected WorkingDays() {
 
@@ -68,6 +71,8 @@ public class WorkingDays extends AbstractPersistable<Long> {
 
     public Boolean getExtendTermForRepaymentsOnHolidays() { return this.extendTermForRepaymentsOnHolidays; }
 
+    public Boolean getApplyInterestOnHoliday() { return this.applyInterestOnHolidays; }
+
     public Map<String, Object> update(final JsonCommand command) {
         final Map<String, Object> actualChanges = new LinkedHashMap<>(7);
 
@@ -84,11 +89,23 @@ public class WorkingDays extends AbstractPersistable<Long> {
             actualChanges.put(repaymentRescheduleTypeParamName,  WorkingDaysEnumerations.workingDaysStatusType(newValue));
             this.repaymentReschedulingType = RepaymentRescheduleType.fromInt(newValue).getValue();
         }
-        
-        if(command.isChangeInBooleanParameterNamed(WorkingDaysApiConstants.extendTermForDailyRepayments, this.extendTermForDailyRepayments)){
+
+        if (command.isChangeInBooleanParameterNamed(WorkingDaysApiConstants.extendTermForDailyRepayments, this.extendTermForDailyRepayments)){
             final Boolean newValue = command.booleanPrimitiveValueOfParameterNamed(WorkingDaysApiConstants.extendTermForDailyRepayments);
             actualChanges.put(WorkingDaysApiConstants.extendTermForDailyRepayments, newValue);
             this.extendTermForDailyRepayments = newValue;
+        }
+
+        if (command.isChangeInBooleanParameterNamed(WorkingDaysApiConstants.extendTermForRepaymentsOnHolidays, this.extendTermForRepaymentsOnHolidays)) {
+            final Boolean newValue = command.booleanPrimitiveValueOfParameterNamed(WorkingDaysApiConstants.extendTermForRepaymentsOnHolidays);
+            actualChanges.put(WorkingDaysApiConstants.extendTermForRepaymentsOnHolidays, newValue);
+            this.extendTermForRepaymentsOnHolidays = newValue;
+        }
+
+        if (command.isChangeInBooleanParameterNamed(WorkingDaysApiConstants.applyInterestOnHolidays, this.applyInterestOnHolidays)){
+            final Boolean newValue = command.booleanPrimitiveValueOfParameterNamed(WorkingDaysApiConstants.applyInterestOnHolidays);
+            actualChanges.put(WorkingDaysApiConstants.applyInterestOnHolidays, newValue);
+            this.applyInterestOnHolidays = newValue;
         }
         return actualChanges;
     }

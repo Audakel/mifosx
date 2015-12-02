@@ -17,8 +17,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
-import org.joda.time.Days;
-import org.joda.time.LocalDate;
+import org.joda.time.*;
 import org.mifosplatform.infrastructure.core.service.DateUtils;
 import org.mifosplatform.organisation.monetary.domain.ApplicationCurrency;
 import org.mifosplatform.organisation.monetary.domain.MonetaryCurrency;
@@ -70,6 +69,7 @@ public abstract class AbstractLoanScheduleGenerator implements LoanScheduleGener
         final ApplicationCurrency applicationCurrency = loanApplicationTerms.getApplicationCurrency();
         // generate list of proposed schedule due dates
         final LocalDate loanEndDate = this.scheduledDateGenerator.getLastRepaymentDate(loanApplicationTerms, holidayDetailDTO);
+        // TODO: create a method in scheduledDateGenerator that will report the dates that are skipped holidays. pass that into the loan interest calculations :D
         loanApplicationTerms.updateLoanEndDate(loanEndDate);
 
         // determine the total charges due at time of disbursement
@@ -102,10 +102,16 @@ public abstract class AbstractLoanScheduleGenerator implements LoanScheduleGener
         final Collection<LoanScheduleModelPeriod> periods = createNewLoanScheduleListWithDisbursementDetails(numberOfRepayments,
                 loanApplicationTerms, chargesDueAtTimeOfDisbursement);
 
-        // Determine the total interest owed over the full loan for FLAT
-        // interest method .
-        Money totalInterestChargedForFullLoanTerm = loanApplicationTerms.calculateTotalInterestCharged(
-                this.paymentPeriodsInOneYearCalculator, mc);
+        final List<DateTime> holidays = this.scheduledDateGenerator.retrieveHolidayRescheduledPaymentDateList(loanApplicationTerms, holidayDetailDTO);
+        // Determine the total interest owed over the full loan for FLAT interest method.
+        Money totalInterestChargedForFullLoanTerm = null;
+        if (holidayDetailDTO.getWorkingDays().getApplyInterestOnHoliday()) {
+            totalInterestChargedForFullLoanTerm = loanApplicationTerms.calculateTotalInterestChargedWithHolidays(
+                    this.paymentPeriodsInOneYearCalculator, holidays.size(), mc);
+        } else {
+            totalInterestChargedForFullLoanTerm = loanApplicationTerms.calculateTotalInterestCharged(
+                    this.paymentPeriodsInOneYearCalculator, mc);
+        }
 
         LocalDate periodStartDate = loanApplicationTerms.getExpectedDisbursementDate();
         LocalDate actualRepaymentDate = periodStartDate;
@@ -576,7 +582,16 @@ public abstract class AbstractLoanScheduleGenerator implements LoanScheduleGener
                 reducePrincipal = reducePrincipal.minus(principalForThisPeriod);
                 principalForThisPeriod = principalForThisPeriod.zero();
             }
-
+            if (holidayDetailDTO.getWorkingDays().getApplyInterestOnHoliday()) {
+                Interval periodInterval = new Interval(periodStartDate.toDateTime(LocalTime.MIDNIGHT), scheduledDueDate.toDateTime(LocalTime.parse("23:59:59")));
+                int numberOfHolidays = 0;
+                for (DateTime holiday : holidays) {
+                    if (periodInterval.contains(holiday)) {
+                        ++numberOfHolidays;
+                    }
+                }
+                interestForThisinstallment = interestForThisinstallment.plus(interestForThisinstallment.multipliedBy(numberOfHolidays));
+            }
             // earlyPaidAmount is already subtracted from balancereducePrincipal
             // reducePrincipal.plus(unprocessed);
             Money reducedBalance = earlyPaidAmount;

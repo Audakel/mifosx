@@ -42,7 +42,7 @@ public class DefaultScheduledDateGenerator implements ScheduledDateGenerator {
 
     @Override
     public LocalDate generateNextRepaymentDate(final LocalDate lastRepaymentDate, final LoanApplicationTerms loanApplicationTerms,
-            boolean isFirstRepayment, final HolidayDetailDTO holidayDetailDTO) {
+                                               boolean isFirstRepayment, final HolidayDetailDTO holidayDetailDTO) {
         final LocalDate firstRepaymentPeriodDate = loanApplicationTerms.getCalculatedRepaymentsStartingFromLocalDate();
         LocalDate dueRepaymentPeriodDate = null;
         Calendar currentCalendar = loanApplicationTerms.getLoanCalendar();
@@ -53,10 +53,8 @@ public class DefaultScheduledDateGenerator implements ScheduledDateGenerator {
                     loanApplicationTerms.getRepaymentEvery(), lastRepaymentDate, loanApplicationTerms.getNthDay(),
                     loanApplicationTerms.getWeekDayType());
             if (currentCalendar != null) {
-                // If we have currentCalendar object, this means there is a
-                // calendar associated with
-                // the loan, and we should use it in order to calculate next
-                // repayment
+                // If we have currentCalendar object, this means there is a calendar associated with
+                // the loan, and we should use it in order to calculate next repayment
                 LocalDate seedDate = currentCalendar.getStartDateLocalDate();
                 String reccuringString = currentCalendar.getRecurrence();
                 dueRepaymentPeriodDate = CalendarUtils.getNewRepaymentMeetingDate(reccuringString, seedDate, dueRepaymentPeriodDate,
@@ -66,15 +64,8 @@ public class DefaultScheduledDateGenerator implements ScheduledDateGenerator {
             }
         }
         if (currentCalendar == null && holidayDetailDTO.getWorkingDays().getExtendTermForRepaymentsOnHolidays()) {
-            boolean repaymentDateIsOnHoliday = false;
             // compile the list of holidays into Intervals to see if this date lands on a holiday
-            final List<Interval> holidayInterval = new ArrayList<>();
-            for (Holiday holiday : holidayDetailDTO.getHolidays()) {
-                holidayInterval.add(new Interval(
-                        holiday.getFromDateLocalDate().toDateTimeAtStartOfDay(),
-                        holiday.getToDateLocalDate().toDateTime(LocalTime.parse("23:59:59"))
-                ));
-            }
+            final List<Interval> holidayInterval = createHolidayIntveralList(holidayDetailDTO);
             while (intervalListContainsDate(holidayInterval, dueRepaymentPeriodDate)) {
                 dueRepaymentPeriodDate = getRepaymentPeriodDate(loanApplicationTerms.getRepaymentPeriodFrequencyType(),
                         loanApplicationTerms.getRepaymentEvery(), dueRepaymentPeriodDate, loanApplicationTerms.getNthDay(),
@@ -84,6 +75,12 @@ public class DefaultScheduledDateGenerator implements ScheduledDateGenerator {
         return dueRepaymentPeriodDate;
     }
 
+    private LocalDate generateNextRepaymentDateWithoutHolidayRescheduling(final LocalDate lastRepaymentDate, final LoanApplicationTerms loanApplicationTerms) {
+        return getRepaymentPeriodDate(loanApplicationTerms.getRepaymentPeriodFrequencyType(),
+                        loanApplicationTerms.getRepaymentEvery(), lastRepaymentDate, loanApplicationTerms.getNthDay(),
+                        loanApplicationTerms.getWeekDayType());
+    }
+
     private boolean intervalListContainsDate(List<Interval> intervalList, LocalDate date) {
         for (Interval interval : intervalList) {
             if (interval.contains(date.toDateTime(LocalTime.parse("11:59:59")))) {
@@ -91,6 +88,35 @@ public class DefaultScheduledDateGenerator implements ScheduledDateGenerator {
             }
         }
         return false;
+    }
+
+    private List<Interval> createHolidayIntveralList(final HolidayDetailDTO holidayDetailDTO) {
+        List<Interval> holidayInterval = new ArrayList<>();
+        for (Holiday holiday : holidayDetailDTO.getHolidays()) {
+            holidayInterval.add(new Interval(
+                    holiday.getFromDateLocalDate().toDateTimeAtStartOfDay(),
+                    holiday.getToDateLocalDate().toDateTime(LocalTime.parse("23:59:59"))
+            ));
+        }
+        return holidayInterval;
+    }
+
+    public List<DateTime> retrieveHolidayRescheduledPaymentDateList(final LoanApplicationTerms loanApplicationTerms, final HolidayDetailDTO holidayDetailDTO) {
+        final int numberOfRepayments = loanApplicationTerms.getNumberOfRepayments();
+        List<DateTime> holidayDates = new ArrayList<>();
+        LocalDate realRepaymentDate = loanApplicationTerms.getExpectedDisbursementDate();
+        LocalDate noHolidayRepaymentDate = realRepaymentDate;
+        boolean isFirstRepayment = true;
+        for (int repaymentPeriod = 1; repaymentPeriod <= numberOfRepayments; repaymentPeriod++) {
+            realRepaymentDate = generateNextRepaymentDate(realRepaymentDate, loanApplicationTerms, isFirstRepayment, holidayDetailDTO);
+            noHolidayRepaymentDate = generateNextRepaymentDateWithoutHolidayRescheduling(noHolidayRepaymentDate, loanApplicationTerms);
+            while (!noHolidayRepaymentDate.equals(realRepaymentDate)) {
+                holidayDates.add(noHolidayRepaymentDate.toDateTime(LocalTime.parse("11:59:59")));
+                noHolidayRepaymentDate = generateNextRepaymentDateWithoutHolidayRescheduling(noHolidayRepaymentDate, loanApplicationTerms);
+            }
+            isFirstRepayment = false;
+        }
+        return holidayDates;
     }
 
     @Override

@@ -1,0 +1,1 @@
+ALTER TABLE m_working_days ADD apply_interest_holidays BOOLEAN NOT NULL DEFAULT 0;
