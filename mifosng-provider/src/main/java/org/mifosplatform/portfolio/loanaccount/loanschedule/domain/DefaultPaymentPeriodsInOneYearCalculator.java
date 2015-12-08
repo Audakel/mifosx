@@ -23,6 +23,9 @@ public class DefaultPaymentPeriodsInOneYearCalculator implements PaymentPeriodsI
             case WEEKS:
                 paymentPeriodsInOneYear = Integer.valueOf(52);
             break;
+            case FOURWEEKS:
+                paymentPeriodsInOneYear = Integer.valueOf(13);
+            break;
             case MONTHS:
                 paymentPeriodsInOneYear = Integer.valueOf(12);
             break;
@@ -68,6 +71,9 @@ public class DefaultPaymentPeriodsInOneYearCalculator implements PaymentPeriodsI
             break;
             case WEEKS:
                 fraction = numberOfDaysInterestCalculationGrace.doubleValue() / (Double.valueOf("7.0") * every.doubleValue());
+            break;
+            case FOURWEEKS:
+                fraction = numberOfDaysInterestCalculationGrace.doubleValue() / (Double.valueOf("28.0") * every.doubleValue());
             break;
             case MONTHS:
                 fraction = numberOfDaysInterestCalculationGrace.doubleValue() / (Double.valueOf("30.0") * every.doubleValue());

@@ -14,7 +14,8 @@ public enum PeriodFrequencyType {
     WEEKS(1, "periodFrequencyType.weeks"), //
     MONTHS(2, "periodFrequencyType.months"), //
     YEARS(3, "periodFrequencyType.years"), //
-    INVALID(4, "periodFrequencyType.invalid");
+    INVALID(4, "periodFrequencyType.invalid"),
+    FOURWEEKS(5, "periodFrequencyType.fourweeks");
 
     private final Integer value;
     private final String code;
@@ -48,6 +49,9 @@ public enum PeriodFrequencyType {
                 case 3:
                     repaymentFrequencyType = PeriodFrequencyType.YEARS;
                 break;
+                case 5:
+                    repaymentFrequencyType = PeriodFrequencyType.FOURWEEKS;
+                break;
             }
         }
         return repaymentFrequencyType;
@@ -60,10 +64,12 @@ public enum PeriodFrequencyType {
     public boolean isYearly() {
         return this.value.equals(PeriodFrequencyType.YEARS.getValue());
     }
-    
+
     public boolean isWeekly() {
         return this.value.equals(PeriodFrequencyType.WEEKS.getValue());
     }
+
+    public boolean isQuadWeekly() { return this.value.equals(PeriodFrequencyType.FOURWEEKS.getValue()); }
 
     public boolean isDaily() {
         return this.value.equals(PeriodFrequencyType.DAYS.getValue());

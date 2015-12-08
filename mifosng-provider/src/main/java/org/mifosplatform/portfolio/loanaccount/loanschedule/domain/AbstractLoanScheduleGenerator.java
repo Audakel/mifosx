@@ -873,7 +873,7 @@ public abstract class AbstractLoanScheduleGenerator implements LoanScheduleGener
      *            TODO
      * @param loanCharges
      *            TODO
-     * @param principalPortioMap
+     * @param principalPortionMap
      *            TODO
      * 
      */

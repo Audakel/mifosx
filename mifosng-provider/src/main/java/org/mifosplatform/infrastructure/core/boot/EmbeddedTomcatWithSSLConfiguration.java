@@ -7,7 +7,9 @@ package org.mifosplatform.infrastructure.core.boot;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.Inet4Address;
 import java.net.URL;
+import java.net.UnknownHostException;
 
 import org.apache.catalina.connector.Connector;
 import org.apache.commons.io.FileUtils;
@@ -27,6 +29,11 @@ public class EmbeddedTomcatWithSSLConfiguration {
     @Bean
     public EmbeddedServletContainerFactory servletContainer() {
         TomcatEmbeddedServletContainerFactory tomcat = new TomcatEmbeddedServletContainerFactory();
+        try {
+            tomcat.setAddress(Inet4Address.getByName("192.168.254.108"));
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
         tomcat.setContextPath(getContextPath());
         tomcat.addAdditionalTomcatConnectors(createSslConnector());
         return tomcat;
