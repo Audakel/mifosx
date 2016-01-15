@@ -277,27 +277,40 @@ public class LoanReadPlatformServiceImpl implements LoanReadPlatformService {
         sqlBuilder.append(" where ( o.hierarchy like ? or transferToOffice.hierarchy like ?)");
 
         int arrayPos = 2;
-        List<Object> extraCriterias = new ArrayList<>();
+        final List<Object> extraCriterias = new ArrayList<>();
+        final List<Object> extraFiltersCriteria = new ArrayList<>();
         extraCriterias.add(hierarchySearchString);
         extraCriterias.add(hierarchySearchString);
 
+        final StringBuilder filterCriteria = new StringBuilder(200);
         String sqlQueryCriteria = searchParameters.getSqlSearch();
         if (StringUtils.isNotBlank(sqlQueryCriteria)) {
             sqlQueryCriteria = sqlQueryCriteria.replaceAll("accountNo", "l.account_no");
-            sqlBuilder.append(" and (").append(sqlQueryCriteria).append(")");
+            filterCriteria.append(" and (").append(sqlQueryCriteria).append(")");
         }
 
         if (StringUtils.isNotBlank(searchParameters.getExternalId())) {
-            sqlBuilder.append(" and l.external_id = ?");
-            extraCriterias.add(searchParameters.getExternalId());
-            arrayPos = arrayPos + 1;
+            filterCriteria.append(" and l.external_id = ?");
+            extraFiltersCriteria.add(searchParameters.getExternalId());
+            // because the union duplicates the number of parameters, we increment by two
+            arrayPos = arrayPos + 2;
         }
 
         if (StringUtils.isNotBlank(searchParameters.getAccountNo())) {
-            sqlBuilder.append(" and l.account_no = ?");
-            extraCriterias.add(searchParameters.getAccountNo());
-            arrayPos = arrayPos + 1;
+            filterCriteria.append(" and l.account_no = ?");
+            extraFiltersCriteria.add(searchParameters.getAccountNo());
+            arrayPos = arrayPos + 2;
         }
+        extraCriterias.addAll(extraFiltersCriteria);
+        sqlBuilder.append(filterCriteria);
+        // Union the loans that are group only and have no client.
+        sqlBuilder.append(" union select ");
+        sqlBuilder.append(this.loaanLoanMapper.loanSchema());
+        sqlBuilder.append(" join m_office o on o.id = g.office_id");
+        sqlBuilder.append(" where ( o.hierarchy like ? )");
+        arrayPos = arrayPos + 1;
+        extraCriterias.add(hierarchySearchString);
+        extraCriterias.addAll(extraFiltersCriteria);
 
         if (searchParameters.isOrderByRequested()) {
             sqlBuilder.append(" order by ").append(searchParameters.getOrderBy());
